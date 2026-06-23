@@ -15,6 +15,7 @@ import JobsListView from "./pages/JobsList";
 import JobDetailsView from "./pages/JobDetails";
 import ApplicationPage from "./pages/Application";
 import AdminPanelView from "./pages/Admin";
+import CoursesView from "./pages/Courses";
 import "./index.css";
 
 // Apply saved theme immediately to prevent flash
@@ -26,6 +27,7 @@ document.documentElement.setAttribute(
 export default function App() {
   const [view, setView] = useState("home");
   const [jobs, setJobs] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState(null);
   const [filters, setFilters] = useState({ language: "all", location: "all" });
@@ -73,6 +75,20 @@ export default function App() {
       const langs = [...new Set(fetchedJobs.map(j => j.language?.trim()).filter(Boolean))];
       setUniqueLocations(locs);
       setUniqueLanguages(langs);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    const q = query(collection(db, "courses"));
+    const unsub = onSnapshot(q, (snapshot) => {
+      const fetchedCourses = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      fetchedCourses.sort((a, b) => {
+        const orderA = a.order ?? 0;
+        const orderB = b.order ?? 0;
+        return orderA - orderB;
+      });
+      setCourses(fetchedCourses);
     });
     return () => unsub();
   }, []);
@@ -143,6 +159,7 @@ export default function App() {
             <div className="hidden md:flex gap-6 text-sm font-bold text-gray-300">
               <button onClick={() => setView("home")} className={view === "home" ? "border-b-2 pb-1 text-white" : "hover:text-white transition-colors"} style={{ borderColor: view === "home" ? themeColors.accentPurple : "transparent" }}>Home</button>
               <button onClick={() => setView("jobs")} className={view === "jobs" ? "border-b-2 pb-1 text-white" : "hover:text-white transition-colors"} style={{ borderColor: view === "jobs" ? themeColors.accentPurple : "transparent" }}>Find Jobs</button>
+              <button onClick={() => setView("courses")} className={view === "courses" ? "border-b-2 pb-1 text-white" : "hover:text-white transition-colors"} style={{ borderColor: view === "courses" ? themeColors.accentPurple : "transparent" }}>Courses</button>
 
               {currentUser && (
                 <button onClick={() => setView("recommended")} className={view === "recommended" ? "border-b-2 pb-1 text-white" : "hover:text-white transition-colors"} style={{ borderColor: view === "recommended" ? themeColors.accentPurple : "transparent" }}>Recommended</button>
@@ -179,6 +196,7 @@ export default function App() {
           {view === "details" && <JobDetailsView job={selectedJob} onBack={() => setView("jobs")} onApply={() => setView("apply")} />}
           {view === "apply" && <ApplicationPage job={selectedJob} onBack={() => setView("details")} user={currentUser} />}
           {view === "login" && <LoginView onLogin={(user) => { setCurrentUser(user); setView("recommended"); }} availableLanguages={uniqueLanguages} />}
+          {view === "courses" && <CoursesView courses={courses} />}
           {view === "admin" && <AdminPanelView jobs={jobs} />}
         </motion.main>
       </AnimatePresence>

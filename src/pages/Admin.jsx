@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   Lock, Eye, EyeOff, Plus, Loader2, Edit3, Trash2, GripVertical, Clock,
   Search, Languages, Phone, MessageCircle, User, CheckCircle, X, Copy,
-  Download, FileText, ExternalLink, Mic, Mail
+  Download, FileText, ExternalLink, Mic, Mail, BookOpen
 } from "lucide-react";
 import { db } from "../firebase";
 import { collection, onSnapshot, addDoc, deleteDoc, updateDoc, doc, serverTimestamp, query, orderBy } from "firebase/firestore";
@@ -29,8 +29,10 @@ function AdminPanelView({ jobs }) {
 
   const [applications, setApplications] = useState([]);
   const [users, setUsers] = useState([]);
+  const [courses, setCourses] = useState([]);
 
   const [editingId, setEditingId] = useState(null);
+  const [editingCourseId, setEditingCourseId] = useState(null);
   const [editingRecruiter, setEditingRecruiter] = useState({ id: null, name: "" });
 
   const [form, setForm] = useState({
@@ -38,6 +40,18 @@ function AdminPanelView({ jobs }) {
     recordOneLabel: "Introduce yourself and record a voice note in English for at least two minutes to determine your level.",
     requiresSecondRecord: false, recordTwoLabel: "",
     requireCv: false, requireNationalId: false, requireEmail: false, requireAge: false
+  });
+
+  const [courseForm, setCourseForm] = useState({
+    title: "Training Career Sprint (Academy)",
+    subtitle: "Online assessment from home followed by a full online course.",
+    eligibility: "Grads / Undergrads / Gap Year / Drop out · Egyptians / Foreigners",
+    stages: "1- Online Assessment · 2- Online Course",
+    levels: "A1 - C2",
+    commission: "50 - 100 EGP",
+    additionalCommission: "Another commission after getting hired",
+    link: "",
+    isHidden: false
   });
 
   const [loading, setLoading] = useState(false);
@@ -55,7 +69,12 @@ function AdminPanelView({ jobs }) {
         setUsers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
       });
 
-      return () => { unsubApps(); unsubUsers(); };
+      const qCourses = query(collection(db, "courses"), orderBy("order", "asc"));
+      const unsubCourses = onSnapshot(qCourses, (snapshot) => {
+        setCourses(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+
+      return () => { unsubApps(); unsubUsers(); unsubCourses(); };
     }
   }, [isAuth]);
 
@@ -103,6 +122,49 @@ function AdminPanelView({ jobs }) {
     setLoading(false);
   };
 
+  const saveCourse = async () => {
+    setLoading(true);
+    try {
+      if (editingCourseId) {
+        await updateDoc(doc(db, "courses", editingCourseId), { ...courseForm, updatedAt: serverTimestamp() });
+        setEditingCourseId(null);
+      } else {
+        await addDoc(collection(db, "courses"), { ...courseForm, createdAt: serverTimestamp(), order: courses.length, isHidden: false });
+      }
+      setCourseForm({
+        title: "Training Career Sprint (Academy)",
+        subtitle: "Online assessment from home followed by a full online course.",
+        eligibility: "Grads / Undergrads / Gap Year / Drop out · Egyptians / Foreigners",
+        stages: "1- Online Assessment · 2- Online Course",
+        levels: "A1 - C2",
+        commission: "50 - 100 EGP",
+        additionalCommission: "Another commission after getting hired",
+        link: "https://forms.gle/X4P5uCz1ENPCd3Ha8",
+        isHidden: false
+      });
+      alert("Course Saved Successfully");
+    } catch (e) { alert(e.message); }
+    setLoading(false);
+  };
+
+  const toggleCourseVisibility = async (id, currentStatus) => {
+    try {
+      await updateDoc(doc(db, "courses", id), { isHidden: !currentStatus });
+    } catch (err) { alert(err.message); }
+  };
+
+  const deleteCourse = async (id) => {
+    try {
+      await deleteDoc(doc(db, "courses", id));
+    } catch (err) { alert(err.message); }
+  };
+
+  const editCourse = (course) => {
+    setEditingCourseId(course.id);
+    setCourseForm(course);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const toggleJobVisibility = async (id, currentStatus) => {
     try {
       await updateDoc(doc(db, "jobs", id), { isHidden: !currentStatus });
@@ -134,9 +196,9 @@ function AdminPanelView({ jobs }) {
   };
 
   const handleUnlockTab = () => {
-    if (pendingTab === "jobs" || pendingTab === "users") {
+    if (pendingTab === "jobs" || pendingTab === "users" || pendingTab === "courses") {
       if (secPass === "samaltman") {
-        setUnlockedTabs(prev => [...prev, "jobs", "users"]);
+        setUnlockedTabs(prev => [...new Set([...prev, "jobs", "users", "courses"])]);
         setActiveTab(pendingTab);
         setPendingTab(null);
         setSecPass("");
@@ -202,6 +264,9 @@ function AdminPanelView({ jobs }) {
           <button onClick={() => handleTabClick("jobs")} className={`px-4 py-3 text-sm rounded-xl font-bold transition-all border ${activeTab === "jobs" && !pendingTab ? "text-gray-900 border-transparent" : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10 hover:text-white"}`} style={{ backgroundColor: activeTab === "jobs" && !pendingTab ? themeColors.accentPurple : "" }}>
              Manage Jobs
           </button>
+          <button onClick={() => handleTabClick("courses")} className={`px-4 py-3 text-sm rounded-xl font-bold transition-all border ${activeTab === "courses" && !pendingTab ? "text-gray-900 border-transparent" : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10 hover:text-white"}`} style={{ backgroundColor: activeTab === "courses" && !pendingTab ? themeColors.accentPurple : "" }}>
+             Manage Courses{unlockedTabs.includes("courses") ? ` (${courses.length})` : ""}
+          </button>
           <button onClick={() => handleTabClick("users")} className={`px-4 py-3 text-sm rounded-xl font-bold transition-all border ${activeTab === "users" || pendingTab === "users" ? "text-gray-900 border-transparent" : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10 hover:text-white"}`} style={{ backgroundColor: activeTab === "users" || pendingTab === "users" ? themeColors.accentPurple : "" }}>
              Users{unlockedTabs.includes("users") ? ` (${users.length})` : ""}
           </button>
@@ -213,7 +278,7 @@ function AdminPanelView({ jobs }) {
           <div className="p-10 md:p-12 rounded-[3rem] shadow-2xl border border-white/5 w-full max-w-md text-center backdrop-blur-xl" style={{ backgroundColor: themeColors.glassCardBg }}>
             <Lock className="mx-auto mb-6 text-[#9966ff]" size={48}/>
             <h2 className="text-2xl font-bold mb-2 text-white">Secure Section</h2>
-            <p className="text-gray-400 mb-8 font-medium">Password required to open {pendingTab === "jobs" ? "Manage Jobs" : pendingTab === "applications" ? "Applications" : pendingTab === "add_candidate" ? "Add Candidate" : "Users"}</p>
+            <p className="text-gray-400 mb-8 font-medium">Password required to open {pendingTab === "jobs" ? "Manage Jobs" : pendingTab === "courses" ? "Manage Courses" : pendingTab === "applications" ? "Applications" : pendingTab === "add_candidate" ? "Add Candidate" : "Users"}</p>
             <div className="relative mb-6">
                <input type={showSecPass ? "text" : "password"} value={secPass} onChange={(e)=>setSecPass(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleUnlockTab()} className="w-full bg-white/5 p-5 rounded-2xl text-center font-bold outline-none border border-white/5 focus:bg-white/10 focus:border-[#9966ff] transition-all shadow-sm text-white placeholder:text-gray-500" placeholder="******" />
                <button onClick={()=>setShowSecPass(!showSecPass)} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">{showSecPass ? <EyeOff size={22}/> : <Eye size={22}/>}</button>
@@ -237,6 +302,65 @@ function AdminPanelView({ jobs }) {
         </div>
       )}
 
+      {!pendingTab && activeTab === "courses" && (
+        <div className="space-y-16 animate-in fade-in px-4 text-left">
+          <div className="max-w-2xl mx-auto p-8 md:p-12 rounded-[3.5rem] shadow-2xl border border-white/5 backdrop-blur-xl" style={{ backgroundColor: themeColors.glassCardBg }}>
+            <h2 className="text-3xl font-black mb-10 flex items-center justify-center gap-3 text-white">
+              {editingCourseId ? "Edit Course" : "Add New Course"} <BookOpen className="text-gray-900 rounded-lg p-1.5" size={32} style={{ backgroundColor: themeColors.accentPurple }}/>
+            </h2>
+            <div className="space-y-6">
+              <AdminField label="Course Title" value={courseForm.title} placeholder="Training Career Sprint (Academy)" onChange={v => setCourseForm({...courseForm, title: v})}/>
+              <AdminField label="Subtitle" value={courseForm.subtitle} placeholder="Online assessment from home followed by a full online course." onChange={v => setCourseForm({...courseForm, subtitle: v})}/>
+              <AdminField label="Eligibility" value={courseForm.eligibility} placeholder="Grads / Undergrads / Gap Year / Drop out · Egyptians / Foreigners" onChange={v => setCourseForm({...courseForm, eligibility: v})}/>
+              <AdminField label="Course Stages" value={courseForm.stages} placeholder="1- Online Assessment · 2- Online Course" onChange={v => setCourseForm({...courseForm, stages: v})}/>
+              <AdminField label="Levels" value={courseForm.levels} placeholder="A1 - C2" onChange={v => setCourseForm({...courseForm, levels: v})}/>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <AdminField label="Commission" value={courseForm.commission} placeholder="50 - 100 EGP" onChange={v => setCourseForm({...courseForm, commission: v})}/>
+                <AdminField label="Additional Commission" value={courseForm.additionalCommission} placeholder="Another commission after getting hired" onChange={v => setCourseForm({...courseForm, additionalCommission: v})}/>
+              </div>
+              <AdminField label="Registration Link" value={courseForm.link} placeholder="https://forms.gle/..." onChange={v => setCourseForm({...courseForm, link: v})}/>
+              <div className="flex items-center gap-3">
+                <input type="checkbox" id="courseHidden" checked={courseForm.isHidden} onChange={e => setCourseForm({...courseForm, isHidden: e.target.checked})} className="w-5 h-5 accent-green-500 cursor-pointer" />
+                <label htmlFor="courseHidden" className="text-sm font-bold text-white cursor-pointer">Hide Course from Public Page</label>
+              </div>
+              <button disabled={loading} onClick={saveCourse} className="w-full text-gray-900 py-5 rounded-2xl font-bold text-xl flex justify-center items-center gap-3 shadow-xl hover:opacity-90 transition-all" style={{ backgroundColor: themeColors.accentPurple }}>
+                {loading ? <Loader2 className="animate-spin"/> : <Plus size={24}/>} {editingCourseId ? "Save Changes" : "Add Course"}
+              </button>
+            </div>
+          </div>
+
+          <div className="max-w-4xl mx-auto space-y-4">
+            <h3 className="text-2xl font-bold mb-6 mr-4 text-white">Active Courses</h3>
+            {courses.map((course, index) => (
+              <div key={course.id} className={`p-6 rounded-3xl shadow-sm border border-white/5 flex flex-col md:flex-row justify-between items-center backdrop-blur-sm gap-4`} style={{ backgroundColor: themeColors.glassCardBg }}>
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-3 mb-3">
+                    {course.isHidden && <span className="bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-wider">Hidden</span>}
+                    <h4 className="font-bold text-lg text-white">{course.title}</h4>
+                  </div>
+                  <p className="text-gray-400 text-sm mb-2">{course.subtitle}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-300">
+                    <span className="bg-white/5 border border-white/10 px-3 py-2 rounded-2xl">Eligibility: {course.eligibility}</span>
+                    <span className="bg-white/5 border border-white/10 px-3 py-2 rounded-2xl">Levels: {course.levels}</span>
+                    <span className="bg-white/5 border border-white/10 px-3 py-2 rounded-2xl">Commission: {course.commission}</span>
+                    <span className="bg-white/5 border border-white/10 px-3 py-2 rounded-2xl">Link: {course.link ? <a href={course.link} target="_blank" rel="noreferrer" className="text-[#44aaff] hover:underline">Open</a> : "N/A"}</span>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => editCourse(course)} className="py-3 px-5 rounded-2xl bg-white/5 text-[#9966ff] border border-white/10 font-bold hover:bg-[#9966ff] hover:text-gray-900 transition-all">Edit</button>
+                  <button onClick={async () => window.confirm("Delete course?") && await deleteCourse(course.id)} className="py-3 px-5 rounded-2xl bg-red-500/10 text-red-300 border border-red-500/20 font-bold hover:bg-red-500 hover:text-white transition-all">Delete</button>
+                  <button onClick={() => toggleCourseVisibility(course.id, course.isHidden)} className={`py-3 px-5 rounded-2xl font-bold transition-all ${course.isHidden ? 'bg-green-500/10 text-green-300 border border-green-500/20 hover:bg-green-500 hover:text-gray-900' : 'bg-white/5 text-gray-300 border border-white/10 hover:bg-white/10'}`}>
+                    {course.isHidden ? 'Show' : 'Hide'}
+                  </button>
+                </div>
+              </div>
+            ))}
+            {courses.length === 0 && (
+              <div className="rounded-[2rem] border border-dashed border-white/10 bg-white/5 p-12 text-center text-gray-400">No courses yet. Add one using the form above.</div>
+            )}
+          </div>
+        </div>
+      )}
       {!pendingTab && activeTab === "jobs" && (
         <div className="space-y-16 animate-in fade-in px-4 text-left">
           <div className="max-w-2xl mx-auto p-8 md:p-12 rounded-[3.5rem] shadow-2xl border border-white/5 backdrop-blur-xl" style={{ backgroundColor: themeColors.glassCardBg }}>

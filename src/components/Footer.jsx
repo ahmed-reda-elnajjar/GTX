@@ -37,6 +37,7 @@ function Footer({ setView }) {
            <div className="flex gap-6 text-[10px] text-gray-500 uppercase tracking-widest pt-4">
               <button onClick={() => setView("home")} className="hover:text-[#9966ff] transition-colors">Home</button>
               <button onClick={() => setView("jobs")} className="hover:text-[#9966ff] transition-colors">Jobs</button>
+              <button onClick={() => setView("courses")} className="hover:text-[#9966ff] transition-colors">Courses</button>
               <button onClick={() => setView("admin")} className="hover:text-[#9966ff] transition-colors">Admin</button>
            </div>
         </div>
