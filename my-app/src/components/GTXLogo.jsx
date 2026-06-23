@@ -4,7 +4,13 @@ function GTXLogo({ className = "h-12 w-auto" }) {
   return (
     <svg viewBox="0 0 220 70" xmlns="http://www.w3.org/2000/svg" className={className} aria-label="GTX Agency" style={{ overflow: "visible" }}>
       <defs>
-
+        <linearGradient id="gtx-chrome" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stopColor="#f0f5ff"/>
+          <stop offset="20%"  stopColor="#c8d8f2"/>
+          <stop offset="46%"  stopColor="#6878b0"/>
+          <stop offset="65%"  stopColor="#ccd8f4"/>
+          <stop offset="100%" stopColor="#3848a0"/>
+        </linearGradient>
         <linearGradient id="gtx-beam" x1="0" y1="1" x2="1" y2="0">
           <stop offset="0%"   stopColor="#9933ff" stopOpacity="0.1"/>
           <stop offset="25%"  stopColor="#4466ff"/>
