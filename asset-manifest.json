@@ -1,16 +1,16 @@
 {
   "files": {
     "main.css": "/GTX/static/css/main.743c290a.css",
-    "main.js": "/GTX/static/js/main.6f48781f.js",
+    "main.js": "/GTX/static/js/main.95b1694c.js",
     "static/js/453.fd2f0c4a.chunk.js": "/GTX/static/js/453.fd2f0c4a.chunk.js",
     "static/media/english.png": "/GTX/static/media/english.dc40aa8fb373cbebeb93.png",
     "index.html": "/GTX/index.html",
     "main.743c290a.css.map": "/GTX/static/css/main.743c290a.css.map",
-    "main.6f48781f.js.map": "/GTX/static/js/main.6f48781f.js.map",
+    "main.95b1694c.js.map": "/GTX/static/js/main.95b1694c.js.map",
     "453.fd2f0c4a.chunk.js.map": "/GTX/static/js/453.fd2f0c4a.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.743c290a.css",
-    "static/js/main.6f48781f.js"
+    "static/js/main.95b1694c.js"
   ]
 }
