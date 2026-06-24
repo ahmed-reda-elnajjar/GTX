@@ -2,6 +2,7 @@
   "name": "my-app",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://ahmed-reda-elnajjar.github.io/GTX",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@react-three/drei": "^10.7.7",

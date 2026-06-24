@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sun, Moon, LayoutGrid, LogIn, Loader2 } from "lucide-react";
+import { Sun, Moon, LayoutGrid, LogIn, Loader2, X, Menu } from "lucide-react"; 
 import { db, auth } from "./firebase";
 import { collection, onSnapshot, query, updateDoc, doc } from "firebase/firestore";
 import { signInAnonymously } from "firebase/auth";
@@ -34,11 +34,13 @@ export default function App() {
 
   const [currentUser, setCurrentUser] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); 
 
   const [uniqueLocations, setUniqueLocations] = useState([]);
   const [uniqueLanguages, setUniqueLanguages] = useState([]);
 
   const [isDark, setIsDark] = useState(() => localStorage.getItem('gtxTheme') !== 'light');
+  
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
     localStorage.setItem('gtxTheme', isDark ? 'dark' : 'light');
@@ -143,35 +145,46 @@ export default function App() {
     );
   }
 
+  const handleNavigation = (targetView) => {
+    setView(targetView);
+    setIsMobileMenuOpen(false); // إغلاق القائمة بعد اختيار صفحة
+  };
+
   return (
     <div className="min-h-screen text-white font-sans text-left transition-all duration-500" style={{ background: themeColors.mainBgGradient }}>
       <motion.nav
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="p-4 border-b border-white/5 sticky top-0 z-50 shadow-xl backdrop-blur-2xl"
+        className="border-b border-white/5 sticky top-0 z-50 shadow-xl backdrop-blur-2xl"
         style={{ backgroundColor: themeColors.glassBg }}
       >
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+        <div className="max-w-7xl mx-auto flex justify-between items-center p-4">
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView("home")}>
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => handleNavigation("home")}>
               <GTXLogo className="h-12 w-auto" />
             </div>
+            
+            {/* Desktop Navigation Links */}
             <div className="hidden md:flex gap-6 text-sm font-bold text-gray-300">
               <button onClick={() => setView("home")} className={view === "home" ? "border-b-2 pb-1 text-white" : "hover:text-white transition-colors"} style={{ borderColor: view === "home" ? themeColors.accentPurple : "transparent" }}>Home</button>
               <button onClick={() => setView("jobs")} className={view === "jobs" ? "border-b-2 pb-1 text-white" : "hover:text-white transition-colors"} style={{ borderColor: view === "jobs" ? themeColors.accentPurple : "transparent" }}>Find Jobs</button>
               <button onClick={() => setView("courses")} className={view === "courses" ? "border-b-2 pb-1 text-white" : "hover:text-white transition-colors"} style={{ borderColor: view === "courses" ? themeColors.accentPurple : "transparent" }}>Courses</button>
-
+              
               {currentUser && (
                 <button onClick={() => setView("recommended")} className={view === "recommended" ? "border-b-2 pb-1 text-white" : "hover:text-white transition-colors"} style={{ borderColor: view === "recommended" ? themeColors.accentPurple : "transparent" }}>Recommended</button>
               )}
             </div>
           </div>
+          
           <div className="flex gap-2 md:gap-4 items-center">
+            {/* Profile / Login */}
             {!currentUser ? (
-              <motion.button whileHover={{ scale: 1.1, color: themeColors.accentPurple }} whileTap={{ scale: 0.9 }} onClick={() => setView("login")} className="text-gray-300 hover:text-white transition-colors p-2 rounded-full" title="Login"><LogIn size={24} /></motion.button>
+              <motion.button whileHover={{ scale: 1.1, color: themeColors.accentPurple }} whileTap={{ scale: 0.9 }} onClick={() => handleNavigation("login")} className="text-gray-300 hover:text-white transition-colors p-2 rounded-full" title="Login"><LogIn size={24} /></motion.button>
             ) : (
                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} onClick={() => setShowProfileModal(true)} className="w-10 h-10 rounded-full flex items-center justify-center text-gray-900 font-bold cursor-pointer shadow-lg transition-colors border-2 border-[#9966ff]/50" style={{ backgroundColor: themeColors.accentPurple }}>{currentUser.name.charAt(0).toUpperCase()}</motion.div>
             )}
+            
+            {/* Dark Mode Toggle */}
             <motion.button
               whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
               onClick={() => setIsDark(d => !d)}
@@ -180,9 +193,48 @@ export default function App() {
             >
               {isDark ? <Sun size={22} /> : <Moon size={22} />}
             </motion.button>
-            <motion.button whileHover={{ scale: 1.1, color: themeColors.accentPurple }} whileTap={{ scale: 0.9 }} onClick={() => setView("admin")} className="text-gray-300 hover:text-white transition-colors p-2 rounded-full" title="Admin Panel"><LayoutGrid size={24} /></motion.button>
+
+            {/* Desktop Admin Panel Button (Hidden on Mobile) */}
+            <motion.button whileHover={{ scale: 1.1, color: themeColors.accentPurple }} whileTap={{ scale: 0.9 }} onClick={() => handleNavigation("admin")} className="hidden md:block text-gray-300 hover:text-white transition-colors p-2 rounded-full" title="Admin Panel">
+              <LayoutGrid size={24} />
+            </motion.button>
+            
+            {/* Mobile Menu Toggle Button (Visible ONLY on Mobile) */}
+            <button 
+              className="md:hidden text-gray-300 hover:text-[#44aaff] transition-colors p-2"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Dropdown Menu */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="md:hidden overflow-hidden bg-black/40 border-t border-white/10"
+            >
+              <div className="flex flex-col p-5 gap-5 text-sm font-bold text-gray-300">
+                <button onClick={() => handleNavigation("home")} className={`text-left ${view === "home" ? "text-[#44aaff]" : "hover:text-white"}`}>Home</button>
+                <button onClick={() => handleNavigation("jobs")} className={`text-left ${view === "jobs" ? "text-[#44aaff]" : "hover:text-white"}`}>Find Jobs</button>
+                <button onClick={() => handleNavigation("courses")} className={`text-left ${view === "courses" ? "text-[#44aaff]" : "hover:text-white"}`}>Courses</button>
+                
+                {currentUser && (
+                  <button onClick={() => handleNavigation("recommended")} className={`text-left ${view === "recommended" ? "text-[#44aaff]" : "hover:text-white"}`}>Recommended</button>
+                )}
+
+                {/* فاصل مرئي لصفحة الأدمن */}
+                <div className="w-full h-px bg-white/10 my-1"></div>
+                
+                <button onClick={() => handleNavigation("admin")} className={`text-left ${view === "admin" ? "text-[#9966ff]" : "hover:text-white"}`}>Admin Panel</button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.nav>
 
       <AnimatePresence mode="wait">
