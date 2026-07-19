@@ -16,6 +16,7 @@ import JobDetailsView from "./pages/JobDetails";
 import ApplicationPage from "./pages/Application";
 import AdminPanelView from "./pages/Admin";
 import CoursesView from "./pages/Courses";
+import CourseDetailsView from "./pages/CourseDetails";
 import "./index.css";
 
 // Apply saved theme immediately to prevent flash
@@ -248,7 +249,8 @@ export default function App() {
           {view === "details" && <JobDetailsView job={selectedJob} onBack={() => setView("jobs")} onApply={() => setView("apply")} />}
           {view === "apply" && <ApplicationPage job={selectedJob} onBack={() => setView("details")} user={currentUser} />}
           {view === "login" && <LoginView onLogin={(user) => { setCurrentUser(user); setView("recommended"); }} availableLanguages={uniqueLanguages} />}
-          {view === "courses" && <CoursesView courses={courses} />}
+          {view === "courses" && <CoursesView courses={courses} setView={setView} />}
+          {view === "course_details" && <CourseDetailsView onBack={() => setView('courses')} />}
           {view === "admin" && <AdminPanelView jobs={jobs} />}
         </motion.main>
       </AnimatePresence>

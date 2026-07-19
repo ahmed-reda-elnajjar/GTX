@@ -12,12 +12,12 @@ function Footer({ setView }) {
           <motion.div whileHover={{ scale: 1.02 }} className="bg-white/5 p-10 rounded-[2.5rem] border border-white/5 flex flex-col items-center shadow-sm">
              <Mail size={26} style={{ color: themeColors.accentPurple, marginBottom: "8px" }}/>
              <span className="text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-black">Phone / WhatsApp</span>
-             <p className="text-gray-200 break-all text-center">+20 11 40028766</p>
+             <p className="text-gray-200 break-all text-center">+20 10 65725431</p>
           </motion.div>
           <motion.div whileHover={{ scale: 1.02 }} className="bg-white/5 p-10 rounded-[2.5rem] border border-white/5 flex flex-col items-center shadow-sm">
              <Phone size={26} style={{ color: themeColors.accentPurple, marginBottom: "8px" }}/>
              <span className="text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-black">Phone / WhatsApp</span>
-             <p className="text-gray-200">01099119352</p>
+             <p className="text-gray-200">01507150999</p>
           </motion.div>
         </div>
         <div className="flex flex-col items-center md:items-end space-y-4">
@@ -31,7 +31,7 @@ function Footer({ setView }) {
              <motion.a  whileHover={{ y:-5, color: "#E4405F" }}><Instagram size={22}/></motion.a>
              <motion.a whileHover={{ y:-5, color: "#FFFFFF" }}><Video size={22}/></motion.a>
              <motion.a  whileHover={{ y:-5, color: "#0A66C2" }}><Linkedin size={22}/></motion.a>
-             <motion.a href="https://wa.me/201099119352" target="_blank" whileHover={{ y:-5, color: "#25D366" }}><Globe size={22}/></motion.a>
+             <motion.a href="https://wa.me/201507150999" target="_blank" whileHover={{ y:-5, color: "#25D366" }}><Globe size={22}/></motion.a>
            </div>
 
            <div className="flex gap-6 text-[10px] text-gray-500 uppercase tracking-widest pt-4">

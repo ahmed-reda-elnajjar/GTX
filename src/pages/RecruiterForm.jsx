@@ -147,7 +147,7 @@ function RecruiterCandidateForm({ jobs, onAdded }) {
                <label className="block text-xs font-black text-gray-400 uppercase tracking-wide">Select Job *</label>
                <select required value={formData.jobId} onChange={e => setFormData({...formData, jobId: e.target.value})} className="w-full bg-white/5 p-5 rounded-3xl font-bold outline-none border border-white/5 focus:bg-white/10 focus:border-[#9966ff] text-white transition-all shadow-sm">
                  <option value="" className="bg-gray-900">Choose Job...</option>
-                 {jobs.map(j => <option key={j.id} value={j.id} className="bg-gray-900">{j.title} ({j.company})</option>)}
+                 {jobs.filter(j => !j.isHidden).map(j => <option key={j.id} value={j.id} className="bg-gray-900">{j.title} ({j.company})</option>)}
                </select>
              </div>
              <ApplyField label="HR Recruiter Name" icon={<User size={18}/>} placeholder="Your Name" value={formData.hrRecruiterName} onChange={v => setFormData({...formData, hrRecruiterName: v})} required/>

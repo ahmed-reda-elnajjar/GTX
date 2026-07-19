@@ -30,6 +30,7 @@ function AdminPanelView({ jobs }) {
   const [applications, setApplications] = useState([]);
   const [users, setUsers] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [courseInquiries, setCourseInquiries] = useState([]);
 
   const [editingId, setEditingId] = useState(null);
   const [editingCourseId, setEditingCourseId] = useState(null);
@@ -74,7 +75,12 @@ function AdminPanelView({ jobs }) {
         setCourses(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
       });
 
-      return () => { unsubApps(); unsubUsers(); unsubCourses(); };
+      const qCourseInq = query(collection(db, "course_inquiries"), orderBy("createdAt", "desc"));
+      const unsubCourseInq = onSnapshot(qCourseInq, (snapshot) => {
+        setCourseInquiries(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+
+      return () => { unsubApps(); unsubUsers(); unsubCourses(); unsubCourseInq(); };
     }
   }, [isAuth]);
 
@@ -82,16 +88,20 @@ function AdminPanelView({ jobs }) {
     setSearchQuery("");
   }, [activeTab]);
 
-  const handleRateEnglish = async (appId, level) => {
+  const handleUpdateApplication = async (appId, updates) => {
     try {
-      await updateDoc(doc(db, "applications", appId), { englishLevel: level, validatedAt: serverTimestamp() });
-    } catch (err) { alert("Error updating level: " + err.message); }
+      await updateDoc(doc(db, "applications", appId), { ...updates, validatedAt: serverTimestamp() });
+    } catch (err) {
+      alert("Error updating application: " + err.message);
+    }
+  };
+
+  const handleRateEnglish = async (appId, level) => {
+    await handleUpdateApplication(appId, { englishLevel: level });
   };
 
   const handleAppStatus = async (appId, newStatus) => {
-    try {
-      await updateDoc(doc(db, "applications", appId), { status: newStatus, validatedAt: serverTimestamp() });
-    } catch (err) { alert("Error updating status: " + err.message); }
+    await handleUpdateApplication(appId, { status: newStatus });
   };
 
   const handleUpdateRecruiter = async (appId) => {
@@ -196,9 +206,9 @@ function AdminPanelView({ jobs }) {
   };
 
   const handleUnlockTab = () => {
-    if (pendingTab === "jobs" || pendingTab === "users" || pendingTab === "courses") {
+    if (pendingTab === "jobs" || pendingTab === "users" || pendingTab === "courses" || pendingTab === "course_inquiries") {
       if (secPass === "samaltman") {
-        setUnlockedTabs(prev => [...new Set([...prev, "jobs", "users", "courses"])]);
+        setUnlockedTabs(prev => [...new Set([...prev, "jobs", "users", "courses", "course_inquiries"])]);
         setActiveTab(pendingTab);
         setPendingTab(null);
         setSecPass("");
@@ -256,6 +266,9 @@ function AdminPanelView({ jobs }) {
           <button onClick={() => handleTabClick("add_candidate")} className={`px-6 py-4 rounded-2xl font-bold transition-all shadow-lg border ${activeTab === "add_candidate" || pendingTab === "add_candidate" ? "text-gray-900 border-transparent" : "bg-white/5 border-white/5 text-gray-300 hover:bg-white/10"}`} style={{ backgroundColor: activeTab === "add_candidate" || pendingTab === "add_candidate" ? themeColors.accentPurple : "" }}>
              Add Candidate
           </button>
+           <button onClick={() => handleTabClick("course_inquiries")} className={`px-6 py-4 rounded-2xl font-bold transition-all shadow-lg border ${activeTab === "course_inquiries" && !pendingTab ? "text-gray-900 border-transparent" : "bg-white/5 border-white/5 text-gray-300 hover:bg-white/10"}`} style={{ backgroundColor: activeTab === "course_inquiries" && !pendingTab ? themeColors.accentPurple : "" }}>
+             Course Inquiries{unlockedTabs.includes("course_inquiries") ? ` (${courseInquiries.length})` : ""}
+           </button>
         </div>
 
         <div className="hidden md:block w-px h-12 bg-white/10 mx-2"></div>
@@ -359,6 +372,31 @@ function AdminPanelView({ jobs }) {
               <div className="rounded-[2rem] border border-dashed border-white/10 bg-white/5 p-12 text-center text-gray-400">No courses yet. Add one using the form above.</div>
             )}
           </div>
+        </div>
+      )}
+      {!pendingTab && activeTab === "course_inquiries" && (
+        <div className="max-w-4xl mx-auto animate-in fade-in px-4 text-left">
+          <h3 className="text-2xl font-bold mb-6 mr-4 text-white">Course Inquiries</h3>
+          {courseInquiries.length === 0 ? (
+            <div className="text-center text-gray-500 font-bold py-20">No inquiries yet.</div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {courseInquiries.map(q => (
+                <div key={q.id} className="p-6 rounded-2xl shadow-sm border border-white/5 flex justify-between items-center" style={{ backgroundColor: themeColors.glassCardBg }}>
+                  <div>
+                    <h4 className="font-bold text-white">{q.name}</h4>
+                    <p className="text-sm text-gray-400">{q.phone}</p>
+                    <p className="text-sm text-gray-300">Course: {q.courseTitle || (courses.find(c => c.id === q.courseId)?.title) || 'Training Career Sprint (Academy)'}</p>
+                    <p className="text-xs text-gray-500 mt-2">{q.createdAt ? formatDateTime(q.createdAt) : "—"}</p>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <button onClick={async () => window.confirm("Delete inquiry?") && await deleteDoc(doc(db, "course_inquiries", q.id))} className="py-2 px-4 rounded-2xl bg-red-500/10 text-red-300 border border-red-500/20 font-bold hover:bg-red-500 hover:text-white transition-all">Delete</button>
+                    <button onClick={() => { navigator.clipboard.writeText(q.phone || ""); alert("Phone copied"); }} className="py-2 px-4 rounded-2xl bg-white/5 text-gray-300 border border-white/10 font-bold hover:bg-white/10 transition-all">Copy Phone</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
       {!pendingTab && activeTab === "jobs" && (
@@ -521,7 +559,8 @@ function AdminPanelView({ jobs }) {
              return (
                <div className="grid grid-cols-1 gap-6">
                   {displayedApps.map(app => {
-                    let displayStatus = ['Accepted', 'Rejected'].includes(app.status) ? app.status : 'New';
+                    let displayStatus = ['Accepted', 'Rejected', 'ProposedAnotherOffer'].includes(app.status) ? app.status : 'New';
+                    const displayStatusLabel = displayStatus === 'ProposedAnotherOffer' ? 'Proposed another offer' : displayStatus;
                     return (
                     <div key={app.id} className="p-8 rounded-[2.5rem] shadow-sm border border-white/5 relative group hover:shadow-xl transition-all backdrop-blur-md flex flex-col" style={{ backgroundColor: themeColors.glassCardBg }}>
 
@@ -542,9 +581,10 @@ function AdminPanelView({ jobs }) {
                           <span className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm border ${
                               displayStatus === 'Accepted' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
                               displayStatus === 'Rejected' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                              displayStatus === 'ProposedAnotherOffer' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
                               'bg-[#9966ff]/20 text-[#9966ff] border-[#9966ff]/30'
                           }`}>
-                              {displayStatus}
+                              {displayStatusLabel}
                           </span>
                        </div>
 
@@ -672,14 +712,67 @@ function AdminPanelView({ jobs }) {
                                        onChange={(e) => handleRateEnglish(app.id, e.target.value)}
                                      >
                                        <option className="bg-gray-900" value="" disabled>Rate Level...</option>
-                                       <option className="bg-gray-900" value="A1">A1 (Beginner)</option>
-                                       <option className="bg-gray-900" value="A2">A2 (Elementary)</option>
-                                       <option className="bg-gray-900" value="B1">B1 (Intermediate)</option>
-                                       <option className="bg-gray-900" value="B2">B2 (Upper Interm.)</option>
-                                       <option className="bg-gray-900" value="C1">C1 (Advanced)</option>
-                                       <option className="bg-gray-900" value="C2">C2 (Fluent)</option>
+                                       <option className="bg-gray-900" value="A2+-B1">A2+-B1</option>
+                                       <option className="bg-gray-900" value="B1-B1+">B1-B1+</option>
+                                       <option className="bg-gray-900" value="B1+-B2">B1+ - B2</option>
+                                       <option className="bg-gray-900" value="B2-B2+">B2 - B2+</option>
+                                       <option className="bg-gray-900" value="B2+-C1">B2+ - C1</option>
                                      </select>
                                    </div>
+
+                                   {activeTab === "recruiter_apps" ? (
+                                     app.evaluationComment?.trim() ? (
+                                       <div className="w-full mt-3 bg-white/5 border border-white/10 rounded-3xl p-4 text-sm text-white">
+                                         <div className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-2">Evaluation notes</div>
+                                         <p className="whitespace-pre-line">{app.evaluationComment}</p>
+                                       </div>
+                                     ) : null
+                                   ) : (
+                                     <div className="w-full mt-3">
+                                       <label className="block text-xs uppercase tracking-wider text-gray-400 font-bold mb-2">Evaluation notes</label>
+                                       <textarea
+                                         value={app.evaluationComment || ""}
+                                         onChange={(e) => handleUpdateApplication(app.id, { evaluationComment: e.target.value })}
+                                         placeholder="Add admin evaluation comment..."
+                                         className="w-full min-h-[96px] p-3 rounded-2xl text-sm font-medium border border-white/5 outline-none transition-all shadow-sm bg-white/5 text-white focus:border-[#9966ff]"
+                                       />
+                                     </div>
+                                   )}
+
+                                   <div className="w-full mt-3">
+                                     <label className="block text-xs uppercase tracking-wider text-gray-400 font-bold mb-2">Proposed offer</label>
+                                     <select
+                                       disabled={activeTab === "recruiter_apps"}
+                                       value={app.proposedOfferId || ""}
+                                       onChange={(e) => {
+                                         const selectedJob = jobs.find(job => job.id === e.target.value);
+                                         handleUpdateApplication(app.id, {
+                                           proposedOfferId: e.target.value,
+                                           proposedOffer: selectedJob ? `${selectedJob.title} @ ${selectedJob.company}` : ""
+                                         });
+                                       }}
+                                       className={`w-full p-3 rounded-2xl text-sm font-bold border border-white/5 outline-none transition-all shadow-sm ${activeTab === "recruiter_apps" ? "bg-transparent text-gray-500 cursor-not-allowed" : "bg-white/5 text-white cursor-pointer focus:border-[#9966ff]"}`}
+                                     >
+                                       <option className="bg-gray-900" value="" disabled>Select an available offer...</option>
+                                       {jobs.filter(job => !job.isHidden).map(job => (
+                                         <option key={job.id} className="bg-gray-900" value={job.id}>{job.title} - {job.company}</option>
+                                       ))}
+                                     </select>
+                                   </div>
+
+                                   {(() => {
+                                     const selectedJob = jobs.find(job => job.id === app.proposedOfferId);
+                                     const isHiddenSelected = selectedJob?.isHidden;
+                                     return isHiddenSelected ? (
+                                       <div className="mt-3 px-4 py-3 rounded-3xl bg-red-500/10 border border-red-500/20 text-sm font-bold text-red-100">
+                                         اقتراح اوفر اخر
+                                       </div>
+                                     ) : app.proposedOffer ? (
+                                       <div className="mt-3 px-4 py-3 rounded-3xl bg-yellow-500/10 border border-yellow-500/20 text-sm font-bold text-yellow-100">
+                                         Selected offer: {app.proposedOffer}
+                                       </div>
+                                     ) : null;
+                                   })()}
 
                                    <div className="w-full flex items-center gap-2 mt-1">
                                      <CheckCircle size={16} className={
@@ -693,6 +786,7 @@ function AdminPanelView({ jobs }) {
                                        } ${
                                          displayStatus === 'Accepted' ? 'bg-green-500/20 text-green-300 border-green-500/50' :
                                          displayStatus === 'Rejected' ? 'bg-red-500/20 text-red-300 border-red-500/50' :
+                                         displayStatus === 'ProposedAnotherOffer' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/50' :
                                          'bg-white/5 text-white'
                                        }`}
                                        value={displayStatus}
@@ -701,6 +795,7 @@ function AdminPanelView({ jobs }) {
                                        <option className="bg-gray-900" value="New">Status: New</option>
                                        <option className="bg-gray-900" value="Accepted">Accepted</option>
                                        <option className="bg-gray-900" value="Rejected">Rejected</option>
+                                       <option className="bg-gray-900" value="ProposedAnotherOffer">Proposed another offer</option>
                                      </select>
                                    </div>
                                </div>

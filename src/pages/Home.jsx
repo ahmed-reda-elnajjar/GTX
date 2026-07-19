@@ -157,10 +157,9 @@ function HomeView({ setView, onFastApply, jobs = [], currentUser = null, onViewD
             <motion.button
               whileHover={{ scale: 1.06 }}
               whileTap={{ scale: 0.96 }}
-              onClick={onFastApply}
-              className="bg-white/5 backdrop-blur-md text-white w-full sm:w-auto justify-center px-8 py-4 sm:py-5 rounded-[2rem] font-bold text-lg sm:text-xl border border-white/20 shadow-xl flex items-center gap-3 hover:bg-white/10 transition-colors"
-            >
-              Fast Apply <Zap size={20} className="text-[#44aaff] fill-[#44aaff]" />
+              onClick={() => setView("courses")}
+               className="text-white w-full sm:w-auto justify-center px-8 py-4 sm:py-5 rounded-[2rem] font-bold text-lg sm:text-xl flex items-center gap-3 shadow-[0_10px_40px_rgba(153,102,255,0.45)] hover:opacity-90 transition-opacity"            >
+              Courses <Zap size={20} className="text-[#44aaff] fill-[#44aaff]" />
             </motion.button>
           </motion.div>
         </div>
